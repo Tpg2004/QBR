@@ -1,6 +1,6 @@
 # app.py
 # A professional, single-file Streamlit application to generate comprehensive, AI-powered QBR decks.
-# Version 8.1: Corrected an import error to ensure perfect execution.
+# Version 8.2: Corrected an AttributeError in the rgb_to_hex function for smooth execution.
 
 import streamlit as st
 import pandas as pd
@@ -10,7 +10,7 @@ import seaborn as sns
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN # <-- CORRECTED LINE
+from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_SHAPE
 import datetime
 import os
@@ -28,7 +28,8 @@ WHITE_COLOR = RGBColor(255, 255, 255)
 
 def rgb_to_hex(rgb_color_obj):
     """Converts a python-pptx RGBColor object to a hex string for matplotlib."""
-    r, g, b = rgb_color_obj.rgb
+    # CORRECTED LINE: The RGBColor object unpacks directly like a tuple.
+    r, g, b = rgb_color_obj
     return f"#{r:02x}{g:02x}{b:02x}"
 
 def get_enhanced_mock_data(customer_name, tone="Formal"):
