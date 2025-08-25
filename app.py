@@ -1,6 +1,6 @@
 # app.py
 # A professional, single-file Streamlit application to generate comprehensive, AI-powered QBR decks.
-# Version 6: Final fix for color conversion AttributeError.
+# Version 7: Enhanced PowerPoint alignment and professional layout.
 
 import streamlit as st
 import pandas as pd
@@ -24,14 +24,11 @@ TEXT_COLOR_PPT = RGBColor(33, 33, 33)      # Dark Gray for PPT
 
 def rgb_to_hex(rgb_color_obj):
     """Converts a python-pptx RGBColor object to a hex string for matplotlib."""
-    # *** FINAL ERROR FIX: The RGBColor object is iterable. We can unpack it directly. ***
-    # This is more robust and avoids method call issues.
     r, g, b = rgb_color_obj
     return f"#{r:02x}{g:02x}{b:02x}"
 
 def get_enhanced_mock_data(customer_name):
     """Generates a rich, multi-faceted dataset for a comprehensive QBR."""
-    # Seed based on name for consistent results across runs for the same name
     np.random.seed(hash(customer_name) % (2**32 - 1))
 
     kpis = {
@@ -75,7 +72,6 @@ def get_enhanced_mock_data(customer_name):
         'Due Date': [(datetime.date.today() + datetime.timedelta(days=d)).strftime('%Y-%m-%d') for d in [14, 30, 45]],
         'Status': ['Not Started', 'Not Started', 'Not Started']
     })
-    # Use locals() to conveniently return all defined variables in a dictionary
     return locals()
 
 def create_revenue_chart(revenue_df, customer_name, output_path="revenue_chart.png"):
@@ -93,7 +89,8 @@ def add_table_to_slide(slide, df, x, y, cx, cy):
     """Helper function to add a styled pandas DataFrame as a table to a slide."""
     shape = slide.shapes.add_table(df.shape[0] + 1, df.shape[1], x, y, cx, cy)
     table = shape.table
-    for i in range(df.shape[1]): table.columns[i].width = Inches(16 / df.shape[1])
+    # Set column widths to be equal
+    for i in range(df.shape[1]): table.columns[i].width = int(cx / df.shape[1])
     for i, col_name in enumerate(df.columns):
         cell = table.cell(0, i); cell.text = col_name
         cell.text_frame.paragraphs[0].font.bold = True
@@ -110,31 +107,63 @@ def create_professional_qbr_deck(data):
         slide.shapes.title.text = title_text; slide.placeholders[1].text = subtitle_text
     def add_content_slide(title_text):
         slide = prs.slides.add_slide(prs.slide_layouts[1])
-        slide.shapes.title.text = title_text; return slide, slide.placeholders[1].text_frame
+        slide.shapes.title.text = title_text; return slide, slide.placeholders[1]
 
     add_title_slide(f"Quarterly Business Review: {data['customer_name']}", f"Q3 2025 Report | Prepared: {datetime.date.today().strftime('%B %d, %Y')}")
-    slide, content = add_content_slide("Agenda"); topics = ["Quarterly Snapshot & Highlights", "Commitment Review", "Challenges & Key Learnings", "Objectives for Next Quarter (OKRs)", "Strategic Growth & Product Roadmap", "Commercial Outlook", "Joint Action Plan & Next Steps"]
-    for topic in topics: p = content.add_paragraph(); p.text = topic; p.level = 0
+    
+    slide, content_placeholder = add_content_slide("Agenda")
+    content = content_placeholder.text_frame
+    content.clear() # Clear existing text
+    topics = ["Quarterly Snapshot & Highlights", "Commitment Review", "Challenges & Key Learnings", "Objectives for Next Quarter (OKRs)", "Strategic Growth & Product Roadmap", "Commercial Outlook", "Joint Action Plan & Next Steps"]
+    for topic in topics: p = content.add_paragraph(); p.text = topic; p.level = 0; p.space_after = Pt(12)
+
     slide, _ = add_content_slide("Quarterly Snapshot: Key Metrics")
+    # *** ALIGNMENT FIX: Calculated spacing for perfect centering of KPI boxes ***
+    num_kpis = len(data['kpis']); box_width = 2.5; gap = 0.5
+    total_width = num_kpis * box_width + (num_kpis - 1) * gap
+    start_x = (16 - total_width) / 2
     for i, (key, value) in enumerate(data['kpis'].items()):
-        txBox = slide.shapes.add_textbox(Inches(i*2.6 + 0.5), Inches(2.5), Inches(2.5), Inches(2)); tf = txBox.text_frame
+        left = Inches(start_x + i * (box_width + gap))
+        txBox = slide.shapes.add_textbox(left, Inches(2.5), Inches(box_width), Inches(2)); tf = txBox.text_frame
         p_val = tf.add_paragraph(); p_val.text = str(value); p_val.font.bold = True; p_val.font.size = Pt(44); p_val.alignment = PP_ALIGN.CENTER
         p_key = tf.add_paragraph(); p_key.text = key; p_key.font.size = Pt(16); p_key.alignment = PP_ALIGN.CENTER
-    slide, _ = add_content_slide("Commitment Review: Promises vs. Reality"); add_table_to_slide(slide, data['commit_vs_actual'], Inches(1), Inches(2), Inches(14), Inches(4))
+
+    slide, _ = add_content_slide("Commitment Review: Promises vs. Reality")
+    add_table_to_slide(slide, data['commit_vs_actual'], Inches(1), Inches(2.5), Inches(14), Inches(4))
+
     slide, _ = add_content_slide("Challenges & Key Learnings")
-    txBox1 = slide.shapes.add_textbox(Inches(1), Inches(2), Inches(6.5), Inches(5)); tf1 = txBox1.text_frame; tf1.text = "Challenges Faced This Quarter"; tf1.paragraphs[0].font.bold = True
+    # *** ALIGNMENT FIX: Defined precise positions for Challenge/Learning boxes ***
+    box_width_cl, gap_cl = 7.0, 1.0
+    left_cl1 = (16 - (2 * box_width_cl + gap_cl)) / 2
+    left_cl2 = left_cl1 + box_width_cl + gap_cl
+    txBox1 = slide.shapes.add_textbox(Inches(left_cl1), Inches(2.5), Inches(box_width_cl), Inches(5)); tf1 = txBox1.text_frame
+    tf1.text = "Challenges Faced This Quarter"; tf1.paragraphs[0].font.bold = True
     for item in data['challenges']: p = tf1.add_paragraph(); p.text = item; p.level = 1
-    txBox2 = slide.shapes.add_textbox(Inches(8.5), Inches(2), Inches(6.5), Inches(5)); tf2 = txBox2.text_frame; tf2.text = "Key Lessons Learned"; tf2.paragraphs[0].font.bold = True
+    txBox2 = slide.shapes.add_textbox(Inches(left_cl2), Inches(2.5), Inches(box_width_cl), Inches(5)); tf2 = txBox2.text_frame
+    tf2.text = "Key Lessons Learned"; tf2.paragraphs[0].font.bold = True
     for item in data['learnings']: p = tf2.add_paragraph(); p.text = item; p.level = 1
-    slide, _ = add_content_slide("Objectives for Next Quarter (OKRs)"); add_table_to_slide(slide, data['okrs'], Inches(1), Inches(2), Inches(14), Inches(5))
+
+    slide, _ = add_content_slide("Objectives for Next Quarter (OKRs)")
+    add_table_to_slide(slide, data['okrs'], Inches(1), Inches(2.5), Inches(14), Inches(5))
+
     slide, _ = add_content_slide("Strategic Growth & Product Roadmap")
+    # *** ALIGNMENT FIX: Calculated spacing for roadmap columns ***
+    num_roadmap = len(data['roadmap']); box_width_r = 4.5; gap_r = 1.0
+    total_width_r = num_roadmap * box_width_r + (num_roadmap - 1) * gap_r
+    start_x_r = (16 - total_width_r) / 2
     for i, (quarter, features) in enumerate(data['roadmap'].items()):
-        txBox = slide.shapes.add_textbox(Inches(i*5 + 1), Inches(2.5), Inches(4.5), Inches(4)); tf = txBox.text_frame
+        left = Inches(start_x_r + i * (box_width_r + gap_r))
+        txBox = slide.shapes.add_textbox(left, Inches(2.5), Inches(box_width_r), Inches(5)); tf = txBox.text_frame
         p_qtr = tf.add_paragraph(); p_qtr.text = quarter; p_qtr.font.bold = True; p_qtr.font.size = Pt(24)
-        for feature in features: p_feat = tf.add_paragraph(); p_feat.text = feature; p_feat.level = 1
-    slide, _ = add_content_slide("Commercial Outlook: Revenue Forecast"); chart_path = create_revenue_chart(data['revenue_forecast'], data['customer_name'])
-    slide.shapes.add_picture(chart_path, Inches(2), Inches(1.8), width=Inches(12)); os.remove(chart_path)
-    slide, _ = add_content_slide("Joint Action Plan & Owners"); add_table_to_slide(slide, data['action_plan'], Inches(1), Inches(2), Inches(14), Inches(4))
+        for feature in features: p_feat = tf.add_paragraph(); p_feat.text = "• " + feature; p_feat.level = 0
+
+    slide, _ = add_content_slide("Commercial Outlook: Revenue Forecast")
+    chart_path = create_revenue_chart(data['revenue_forecast'], data['customer_name'])
+    slide.shapes.add_picture(chart_path, Inches(2), Inches(2.0), width=Inches(12)); os.remove(chart_path)
+
+    slide, _ = add_content_slide("Joint Action Plan & Owners")
+    add_table_to_slide(slide, data['action_plan'], Inches(1), Inches(2.5), Inches(14), Inches(4))
+
     add_title_slide("Thank You", "Q&A and Discussion")
     output_filename = f"QBR_{data['customer_name'].replace(' ', '_')}_{datetime.date.today()}.pptx"; prs.save(output_filename); return output_filename
 
