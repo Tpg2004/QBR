@@ -1,6 +1,6 @@
 # app.py
 # A professional, single-file Streamlit application to generate comprehensive, AI-powered QBR decks.
-# Version 8: Major UI overhaul for both Streamlit App and generated PowerPoint.
+# Version 9: Added a professional login page.
 
 import streamlit as st
 import pandas as pd
@@ -152,42 +152,10 @@ def create_professional_qbr_deck(data):
     add_title_slide("Thank You", "Q&A and Discussion")
     output_filename = f"QBR_{data['customer_name'].replace(' ', '_')}_{datetime.date.today()}.pptx"; prs.save(output_filename); return output_filename
 
-# --- 2. FRONTEND UI: PROFESSIONAL STREAMLIT APPLICATION ---
+# --- 2. FRONTEND UI: MAIN APPLICATION & LOGIN PAGE ---
 
-st.set_page_config(page_title="AI QBR Deck Generator", page_icon="✨", layout="wide")
-
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; }
-    .stApp { background: #f0f2f6; }
-    .main-container { padding: 2rem; }
-    .header { text-align: center; margin-bottom: 2rem; }
-    .header h1 {
-        font-size: 3rem; font-weight: 700; color: #0f203e;
-        background: -webkit-linear-gradient(45deg, #007bff, #0f203e);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .header p { font-size: 1.2rem; color: #555; }
-    .card {
-        background: white; border-radius: 15px; padding: 25px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.07); transition: all 0.3s ease;
-    }
-    .card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
-    .stButton>button {
-        background-image: linear-gradient(to right, #007bff 0%, #0056b3 100%);
-        color: white; border-radius: 10px; transition: 0.5s; background-size: 200% auto;
-        font-weight: 600; border: none; height: 3em; width: 100%;
-    }
-    .stButton>button:hover { background-position: right center; }
-    .stDownloadButton>button { background-image: linear-gradient(to right, #28a745, #218838); }
-    .feature-card { text-align: center; padding: 1.5rem; }
-    .feature-card h3 { color: #0f203e; font-weight: 600; }
-    .feature-card .icon { font-size: 3rem; margin-bottom: 1rem; color: #007bff; }
-</style>
-""", unsafe_allow_html=True)
-
-with st.container():
+def main_app():
+    """This function contains the main QBR generator application UI."""
     st.markdown("<div class='header'><h1>AI QBR Deck Generator</h1><p>Instantly create stunning, data-driven presentations that impress.</p></div>", unsafe_allow_html=True)
     
     col1, col2 = st.columns([1, 1.5])
@@ -230,4 +198,75 @@ with st.container():
                 st.markdown("<div class='feature-card'><div class='icon'>🎨</div><h3>Design Automation</h3><p>Builds a professionally designed presentation.</p></div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
-st.sidebar.info("This is a Proof-of-Concept. All data is realistically simulated for demonstration.")
+    st.sidebar.info("This is a Proof-of-Concept. All data is realistically simulated for demonstration.")
+    if st.sidebar.button("Logout"):
+        st.session_state.logged_in = False
+        st.rerun()
+
+def login_page():
+    """This function displays the login UI."""
+    st.markdown("<div class='header'><h1>Welcome Back</h1><p>Please log in to continue.</p></div>", unsafe_allow_html=True)
+    
+    with st.container():
+        col1, col2, col3 = st.columns([1,1,1])
+        with col2:
+            with st.container():
+                st.markdown("<div class='card login-card'>", unsafe_allow_html=True)
+                username = st.text_input("Username", placeholder="Enter your username")
+                password = st.text_input("Password", type="password", placeholder="Enter your password")
+                if st.button("Login"):
+                    # For this demo, any non-empty credentials will work.
+                    if username and password:
+                        st.session_state.logged_in = True
+                        st.rerun()
+                    else:
+                        st.error("Please enter both username and password.")
+                st.markdown("</div>", unsafe_allow_html=True)
+
+
+# --- MAIN SCRIPT EXECUTION ---
+st.set_page_config(page_title="AI QBR Deck Generator", page_icon="✨", layout="wide")
+
+# --- SHARED STYLES FOR BOTH PAGES ---
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .stApp { background: #f0f2f6; }
+    .main-container { padding: 2rem; }
+    .header { text-align: center; margin-bottom: 2rem; }
+    .header h1 {
+        font-size: 3rem; font-weight: 700; color: #0f203e;
+        background: -webkit-linear-gradient(45deg, #007bff, #0f203e);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .header p { font-size: 1.2rem; color: #555; }
+    .card {
+        background: white; border-radius: 15px; padding: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.07); transition: all 0.3s ease;
+    }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+    .login-card { padding: 35px; }
+    .stButton>button {
+        background-image: linear-gradient(to right, #007bff 0%, #0056b3 100%);
+        color: white; border-radius: 10px; transition: 0.5s; background-size: 200% auto;
+        font-weight: 600; border: none; height: 3em; width: 100%;
+    }
+    .stButton>button:hover { background-position: right center; }
+    .stDownloadButton>button { background-image: linear-gradient(to right, #28a745, #218838); }
+    .feature-card { text-align: center; padding: 1.5rem; }
+    .feature-card h3 { color: #0f203e; font-weight: 600; }
+    .feature-card .icon { font-size: 3rem; margin-bottom: 1rem; color: #007bff; }
+</style>
+""", unsafe_allow_html=True)
+
+# --- CONDITIONAL PAGE RENDERING ---
+# Initialize session state for login
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+# Check login status and display the appropriate page
+if st.session_state.logged_in:
+    main_app()
+else:
+    login_page()
