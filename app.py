@@ -1,6 +1,6 @@
 # app.py
 # A professional, single-file Streamlit application to generate comprehensive, AI-powered QBR decks.
-# Version 4: Syntax error fix and final UI polish.
+# Version 5: AttributeError fix for color conversion.
 
 import streamlit as st
 import pandas as pd
@@ -24,7 +24,9 @@ TEXT_COLOR_PPT = RGBColor(33, 33, 33)      # Dark Gray for PPT
 
 def rgb_to_hex(rgb_color):
     """Converts a python-pptx RGBColor object to a hex string for matplotlib."""
-    return f"#{rgb_color.rgb[0]:02x}{rgb_color.rgb[1]:02x}{rgb_color.rgb[2]:02x}"
+    # *** ATTRIBUTE ERROR FIX: Changed .rgb to the correct method .to_rgb() ***
+    r, g, b = rgb_color.to_rgb()
+    return f"#{r:02x}{g:02x}{b:02x}"
 
 def get_enhanced_mock_data(customer_name):
     """Generates a rich, multi-faceted dataset for a comprehensive QBR."""
@@ -193,7 +195,6 @@ with col1:
             st.warning("Please enter a customer name.")
 
 with col2:
-    # *** SYNTAX ERROR FIX: The string below was unterminated. It is now correctly closed. ***
     with st.expander("See What's Inside Your AI-Generated Deck", expanded=True):
         st.markdown("""
         - **Agenda**: A clear outline of the review.
