@@ -1,6 +1,6 @@
 # app.py
 # A professional, single-file Streamlit application to generate comprehensive, AI-powered QBR decks.
-# Version 3: Error fixes and major UI overhaul.
+# Version 4: Syntax error fix and final UI polish.
 
 import streamlit as st
 import pandas as pd
@@ -28,6 +28,7 @@ def rgb_to_hex(rgb_color):
 
 def get_enhanced_mock_data(customer_name):
     """Generates a rich, multi-faceted dataset for a comprehensive QBR."""
+    # Seed based on name for consistent results across runs for the same name
     np.random.seed(hash(customer_name) % (2**32 - 1))
 
     kpis = {
@@ -71,23 +72,18 @@ def get_enhanced_mock_data(customer_name):
         'Due Date': [(datetime.date.today() + datetime.timedelta(days=d)).strftime('%Y-%m-%d') for d in [14, 30, 45]],
         'Status': ['Not Started', 'Not Started', 'Not Started']
     })
-    return locals() # Returns all local variables as a dictionary
+    # Use locals() to conveniently return all defined variables in a dictionary
+    return locals()
 
 def create_revenue_chart(revenue_df, customer_name, output_path="revenue_chart.png"):
     """Creates a bar chart for the revenue forecast."""
     plt.style.use('seaborn-v0_8-whitegrid')
     fig, ax = plt.subplots(figsize=(8, 4))
-    
-    # *** FIX: Convert RGBColor object to hex string for seaborn ***
     chart_color = rgb_to_hex(ACCENT_COLOR_PPT)
-    
     sns.barplot(x=revenue_df['Month'].dt.strftime('%b'), y='Forecasted Revenue ($K)', data=revenue_df, color=chart_color, ax=ax)
-    
     ax.set_title(f'Next Quarter Revenue Forecast', fontsize=14, weight='bold', color=rgb_to_hex(PRIMARY_COLOR_PPT))
-    ax.set_xlabel('Month', fontsize=10)
-    ax.set_ylabel('Forecasted Revenue ($K)', fontsize=10)
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=300, transparent=True)
+    ax.set_xlabel('Month', fontsize=10); ax.set_ylabel('Forecasted Revenue ($K)', fontsize=10)
+    plt.tight_layout(); plt.savefig(output_path, dpi=300, transparent=True)
     return output_path
 
 def add_table_to_slide(slide, df, x, y, cx, cy):
@@ -96,8 +92,7 @@ def add_table_to_slide(slide, df, x, y, cx, cy):
     table = shape.table
     for i in range(df.shape[1]): table.columns[i].width = Inches(16 / df.shape[1])
     for i, col_name in enumerate(df.columns):
-        cell = table.cell(0, i)
-        cell.text = col_name
+        cell = table.cell(0, i); cell.text = col_name
         cell.text_frame.paragraphs[0].font.bold = True
         cell.text_frame.paragraphs[0].font.color.rgb = RGBColor(255, 255, 255)
         cell.fill.solid(); cell.fill.fore_color.rgb = PRIMARY_COLOR_PPT
@@ -106,50 +101,37 @@ def add_table_to_slide(slide, df, x, y, cx, cy):
 
 def create_professional_qbr_deck(data):
     """Builds a comprehensive, professionally styled PowerPoint presentation."""
-    prs = Presentation()
-    prs.slide_width = Inches(16); prs.slide_height = Inches(9)
+    prs = Presentation(); prs.slide_width = Inches(16); prs.slide_height = Inches(9)
     def add_title_slide(title_text, subtitle_text):
         slide = prs.slides.add_slide(prs.slide_layouts[0])
-        slide.shapes.title.text = title_text
-        slide.placeholders[1].text = subtitle_text
+        slide.shapes.title.text = title_text; slide.placeholders[1].text = subtitle_text
     def add_content_slide(title_text):
         slide = prs.slides.add_slide(prs.slide_layouts[1])
-        slide.shapes.title.text = title_text
-        return slide, slide.placeholders[1].text_frame
+        slide.shapes.title.text = title_text; return slide, slide.placeholders[1].text_frame
 
-    # Slide 1: Title
     add_title_slide(f"Quarterly Business Review: {data['customer_name']}", f"Q3 2025 Report | Prepared: {datetime.date.today().strftime('%B %d, %Y')}")
-    # Slide 2: Agenda
     slide, content = add_content_slide("Agenda"); topics = ["Quarterly Snapshot & Highlights", "Commitment Review", "Challenges & Key Learnings", "Objectives for Next Quarter (OKRs)", "Strategic Growth & Product Roadmap", "Commercial Outlook", "Joint Action Plan & Next Steps"]
     for topic in topics: p = content.add_paragraph(); p.text = topic; p.level = 0
-    # Slide 3: Snapshot
     slide, _ = add_content_slide("Quarterly Snapshot: Key Metrics")
     for i, (key, value) in enumerate(data['kpis'].items()):
         txBox = slide.shapes.add_textbox(Inches(i*2.6 + 0.5), Inches(2.5), Inches(2.5), Inches(2)); tf = txBox.text_frame
         p_val = tf.add_paragraph(); p_val.text = str(value); p_val.font.bold = True; p_val.font.size = Pt(44); p_val.alignment = PP_ALIGN.CENTER
         p_key = tf.add_paragraph(); p_key.text = key; p_key.font.size = Pt(16); p_key.alignment = PP_ALIGN.CENTER
-    # Slide 4: Commit vs Actual
     slide, _ = add_content_slide("Commitment Review: Promises vs. Reality"); add_table_to_slide(slide, data['commit_vs_actual'], Inches(1), Inches(2), Inches(14), Inches(4))
-    # Slide 5: Challenges & Lessons
     slide, _ = add_content_slide("Challenges & Key Learnings")
     txBox1 = slide.shapes.add_textbox(Inches(1), Inches(2), Inches(6.5), Inches(5)); tf1 = txBox1.text_frame; tf1.text = "Challenges Faced This Quarter"; tf1.paragraphs[0].font.bold = True
     for item in data['challenges']: p = tf1.add_paragraph(); p.text = item; p.level = 1
     txBox2 = slide.shapes.add_textbox(Inches(8.5), Inches(2), Inches(6.5), Inches(5)); tf2 = txBox2.text_frame; tf2.text = "Key Lessons Learned"; tf2.paragraphs[0].font.bold = True
     for item in data['learnings']: p = tf2.add_paragraph(); p.text = item; p.level = 1
-    # Slide 6: OKRs
     slide, _ = add_content_slide("Objectives for Next Quarter (OKRs)"); add_table_to_slide(slide, data['okrs'], Inches(1), Inches(2), Inches(14), Inches(5))
-    # Slide 7: Roadmap
     slide, _ = add_content_slide("Strategic Growth & Product Roadmap")
     for i, (quarter, features) in enumerate(data['roadmap'].items()):
         txBox = slide.shapes.add_textbox(Inches(i*5 + 1), Inches(2.5), Inches(4.5), Inches(4)); tf = txBox.text_frame
         p_qtr = tf.add_paragraph(); p_qtr.text = quarter; p_qtr.font.bold = True; p_qtr.font.size = Pt(24)
         for feature in features: p_feat = tf.add_paragraph(); p_feat.text = feature; p_feat.level = 1
-    # Slide 8: Revenue Forecast
     slide, _ = add_content_slide("Commercial Outlook: Revenue Forecast"); chart_path = create_revenue_chart(data['revenue_forecast'], data['customer_name'])
     slide.shapes.add_picture(chart_path, Inches(2), Inches(1.8), width=Inches(12)); os.remove(chart_path)
-    # Slide 9: Action Plan
     slide, _ = add_content_slide("Joint Action Plan & Owners"); add_table_to_slide(slide, data['action_plan'], Inches(1), Inches(2), Inches(14), Inches(4))
-    # Slide 10: Thank You
     add_title_slide("Thank You", "Q&A and Discussion")
     output_filename = f"QBR_{data['customer_name'].replace(' ', '_')}_{datetime.date.today()}.pptx"; prs.save(output_filename); return output_filename
 
@@ -160,68 +142,27 @@ st.set_page_config(page_title="AI QBR Deck Generator", page_icon="✨", layout="
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-    
-    body {
-        font-family: 'Poppins', sans-serif;
-    }
-    .stApp {
-        background: #f0f2f6;
-    }
-    .main-header {
-        font-size: 2.5rem;
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 0px;
-        color: #0a2f57;
-    }
-    .sub-header {
-        font-size: 1.1rem;
-        text-align: center;
-        color: #555;
-        margin-bottom: 2rem;
-    }
+    body { font-family: 'Poppins', sans-serif; }
+    .stApp { background: #f0f2f6; }
+    .main-header { font-size: 2.5rem; font-weight: 700; text-align: center; margin-bottom: 0px; color: #0a2f57; }
+    .sub-header { font-size: 1.1rem; text-align: center; color: #555; margin-bottom: 2rem; }
     .stButton>button {
         background-image: linear-gradient(to right, #007bff 0%, #0056b3 51%, #007bff 100%);
-        color: white;
-        border-radius: 10px;
-        transition: 0.5s;
-        background-size: 200% auto;
-        font-weight: 600;
-        border: none;
-        height: 3em;
-        width: 100%;
+        color: white; border-radius: 10px; transition: 0.5s; background-size: 200% auto;
+        font-weight: 600; border: none; height: 3em; width: 100%;
     }
-    .stButton>button:hover {
-        background-position: right center;
-        color: #fff;
-        text-decoration: none;
-    }
-    .stTextInput>div>div>input {
-        background-color: #fff;
-        border-radius: 10px;
-    }
+    .stButton>button:hover { background-position: right center; color: #fff; text-decoration: none; }
+    .stTextInput>div>div>input { background-color: #fff; border-radius: 10px; }
     .info-card {
-        background: white;
-        border-radius: 15px;
-        padding: 25px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-        border-left: 5px solid #007bff;
-        height: 100%;
+        background: white; border-radius: 15px; padding: 25px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-left: 5px solid #007bff; height: 100%;
     }
-    .info-card h3 {
-        color: #0a2f57;
-        font-weight: 600;
-    }
-    .stProgress > div > div > div > div {
-        background-image: linear-gradient(to right, #007bff, #0056b3);
-    }
-    .stDownloadButton>button {
-        background-image: linear-gradient(to right, #28a745 0%, #218838 51%, #28a745 100%);
-    }
+    .info-card h3 { color: #0a2f57; font-weight: 600; }
+    .stProgress > div > div > div > div { background-image: linear-gradient(to right, #007bff, #0056b3); }
+    .stDownloadButton>button { background-image: linear-gradient(to right, #28a745 0%, #218838 51%, #28a745 100%); }
 </style>
 """, unsafe_allow_html=True)
 
-# --- UI Layout ---
 st.markdown("<h1 class='main-header'>✨ AI QBR Deck Generator</h1>", unsafe_allow_html=True)
 st.markdown("<p class='sub-header'>Transform customer data into a stunning, client-ready presentation in seconds.</p>", unsafe_allow_html=True)
 
@@ -236,21 +177,15 @@ with col1:
             with st.spinner('Crafting your presentation...'):
                 progress_bar = st.progress(0, text="Initializing...")
                 enhanced_data = get_enhanced_mock_data(customer_name)
-                
                 time.sleep(1); progress_bar.progress(25, text="Generating Insights...")
                 time.sleep(1); progress_bar.progress(50, text="Creating Visualizations...")
                 time.sleep(1); progress_bar.progress(75, text="Assembling Deck...")
-                
                 final_deck_path = create_professional_qbr_deck(enhanced_data)
-                
                 progress_bar.progress(100, text="Done!")
                 st.success(f"🎉 Your QBR deck is ready!")
-                
                 with open(final_deck_path, "rb") as file:
                     st.download_button(
-                        label="⬇️ Download Presentation",
-                        data=file,
-                        file_name=final_deck_path,
+                        label="⬇️ Download Presentation", data=file, file_name=final_deck_path,
                         mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
                     )
                 os.remove(final_deck_path)
@@ -258,8 +193,8 @@ with col1:
             st.warning("Please enter a customer name.")
 
 with col2:
-    with st.expander("
-**See What's Inside Your AI-Generated Deck**", expanded=True):
+    # *** SYNTAX ERROR FIX: The string below was unterminated. It is now correctly closed. ***
+    with st.expander("See What's Inside Your AI-Generated Deck", expanded=True):
         st.markdown("""
         - **Agenda**: A clear outline of the review.
         - **Quarterly Snapshot**: At-a-glance view of all key performance indicators.
@@ -270,7 +205,7 @@ with col2:
         - **Revenue Forecast**: Commercial outlook and pipeline discussion.
         - **Action Plan**: Clear, actionable next steps with assigned owners.
         """)
-    # *** FIX: Replaced placeholder with a dynamic chart and corrected parameter ***
+
     st.markdown("<div class='info-card'><h3>Sample Visualization</h3></div>", unsafe_allow_html=True)
     sample_data = get_enhanced_mock_data("Sample Company")
     fig, ax = plt.subplots()
