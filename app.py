@@ -1,6 +1,6 @@
 # app.py
 # A professional, single-file Streamlit application to generate comprehensive, AI-powered QBR decks.
-# Version 8: Aesthetically enhanced with a master slide design, interactive UI, and advanced visuals.
+# Version 8.1: Corrected an import error to ensure perfect execution.
 
 import streamlit as st
 import pandas as pd
@@ -10,7 +10,7 @@ import seaborn as sns
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN, MSO_THEME_COLOR
+from pptx.enum.text import PP_ALIGN # <-- CORRECTED LINE
 from pptx.enum.shapes import MSO_SHAPE
 import datetime
 import os
