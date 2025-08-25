@@ -1,6 +1,6 @@
 # app.py
 # A professional, single-file Streamlit application to generate comprehensive, AI-powered QBR decks.
-# Version 5: AttributeError fix for color conversion.
+# Version 6: Final fix for color conversion AttributeError.
 
 import streamlit as st
 import pandas as pd
@@ -22,10 +22,11 @@ PRIMARY_COLOR_PPT = RGBColor(10, 47, 87)    # Deep Navy for PPT
 ACCENT_COLOR_PPT = RGBColor(0, 122, 255)    # Professional Blue for PPT
 TEXT_COLOR_PPT = RGBColor(33, 33, 33)      # Dark Gray for PPT
 
-def rgb_to_hex(rgb_color):
+def rgb_to_hex(rgb_color_obj):
     """Converts a python-pptx RGBColor object to a hex string for matplotlib."""
-    # *** ATTRIBUTE ERROR FIX: Changed .rgb to the correct method .to_rgb() ***
-    r, g, b = rgb_color.to_rgb()
+    # *** FINAL ERROR FIX: The RGBColor object is iterable. We can unpack it directly. ***
+    # This is more robust and avoids method call issues.
+    r, g, b = rgb_color_obj
     return f"#{r:02x}{g:02x}{b:02x}"
 
 def get_enhanced_mock_data(customer_name):
